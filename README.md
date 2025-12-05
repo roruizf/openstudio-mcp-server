@@ -355,33 +355,6 @@ MIT License - See LICENSE file for details
 
 ---
 
-## Citation
-
-If you use this software in your research, please cite:
-
-```bibtex
-@software{openstudio_mcp_server,
-  author = {Ruiz, Rodrigo},
-  title = {OpenStudio MCP Server},
-  year = {2024},
-  url = {https://github.com/roruizf/openstudio-mcp-server},
-  note = {Based on EnergyPlus MCP Server by LBNL-ETA}
-}
-```
-
-Also please cite the original EnergyPlus MCP Server:
-
-```bibtex
-@software{energyplus_mcp_server,
-  author = {{LBNL-ETA}},
-  title = {EnergyPlus MCP Server},
-  year = {2024},
-  url = {https://github.com/LBNL-ETA/energyplus-mcp}
-}
-```
-
----
-
 ## Acknowledgments
 
 - **[LBNL-ETA](https://github.com/LBNL-ETA)** for the EnergyPlus MCP Server architecture that served as the foundation for this project
@@ -400,4 +373,4 @@ Also please cite the original EnergyPlus MCP Server:
 
 ---
 
-**Built with ❤️ using Claude Code and OpenStudio**
+**Built with ❤️ using Claude Code, Python and OpenStudio**
