@@ -16,7 +16,7 @@ This project was developed with the invaluable assistance of **Claude Code** pow
 
 ### Available Tools (19+)
 
-####📁 **File & Model Management**
+#### 📁 **File & Model Management**
 - `load_osm_model` - Load OpenStudio Model files with intelligent path resolution
 - `save_osm_model` - Save modified models
 - `convert_to_idf` - Export to EnergyPlus IDF format
