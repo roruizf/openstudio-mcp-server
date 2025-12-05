@@ -1,0 +1,53 @@
+{
+  "name": "OpenStudio MCP Server Development",
+  "dockerFile": "Dockerfile",
+  "context": "..",
+
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace/openstudio-mcp-server,type=bind,consistency=cached"
+  ],
+
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspace/openstudio-mcp-server",
+
+  "forwardPorts": [6274, 8080, 3000],
+  "portsAttributes": {
+    "6274": {
+      "label": "MCP Inspector",
+      "onAutoForward": "openBrowser"
+    },
+    "8080": {
+      "label": "HTTP Server (Alternative)"
+    },
+    "3000": {
+      "label": "Development Server"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-toolsai.jupyter",
+        "tamasfe.even-better-toml",
+        "GitHub.copilot"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspace/openstudio-mcp-server/.venv/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": "explicit"
+        }
+      }
+    }
+  },
+
+  "postCreateCommand": "uv sync --extra dev",
+
+  "features": {}
+}

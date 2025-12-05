@@ -1,0 +1,78 @@
+[project]
+name = "openstudio-mcp-server"
+version = "0.1.0"
+description = "OpenStudio MCP Server - A Model Context Protocol server for AI-driven building energy modeling with OpenStudio"
+authors = [
+    {name = "Roberto Ruiz", email = "roruizf@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+keywords = ["openstudio", "building-energy-modeling", "mcp", "model-context-protocol"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
+
+dependencies = [
+    "mcp[cli]>=0.1.0",
+    "pandas>=2.0.0",
+    "matplotlib>=3.7.0",
+    "plotly>=5.14.0",
+    "networkx>=3.0",
+    "graphviz>=0.20.0",
+    "openpyxl>=3.1.0",    
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "ipykernel>=6.20.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/roruizf/openstudio-mcp-server"
+Repository = "https://github.com/roruizf/openstudio-mcp-server"
+"Bug Tracker" = "https://github.com/roruizf/openstudio-mcp-server/issues"
+
+[project.scripts]
+openstudio-mcp-server = "openstudio_mcp_server.server:main"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["openstudio_mcp_server", "openstudio_toolkit"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=openstudio_mcp_server --cov-report=html --cov-report=term-missing"
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false

@@ -1,0 +1,105 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude Code
+.claude/
+
+# Jupyter
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# OpenStudio / EnergyPlus outputs
+outputs/
+*.osm.bak
+*.idf.bak
+*.sql
+*.err
+*.eso
+*.mtr
+*.mtd
+*.rdd
+*.shd
+*.audit
+*.bnd
+*.eio
+*.end
+*.table
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS specific
+Thumbs.db
+.DS_Store
+
+# uv
+.uv/
+uv.lock
+
+# Project specific
+sample_files/**/*.epw
+illustrative_examples/**
+!sample_files/models/.gitkeep
+!sample_files/weather/.gitkeep
+*.backup
+*.bak
+
+# Cleanup documentation (not needed in repo)
+CLEANUP_SUMMARY.md
+PROJECT_READY.md
