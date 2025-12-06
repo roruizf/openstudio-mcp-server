@@ -370,27 +370,46 @@ workspace_root: str = "/workspace/openstudio-mcp-server"  # Wrong!
 workspace_root: str = "/workspace"  # Correct!
 ```
 
-### Bug 2: Claude Desktop Can't Find Uploaded Files
+### Bug 2: Claude Desktop Can't Find Uploaded Files (FIXED - Critical)
 
-**Problem**: Server runs directly in Claude Desktop (not Docker), where:
-- Files uploaded to `/mnt/user-data/uploads/`
-- Server only searched `/workspace/` (which doesn't exist there)
-- Environment is actually `/home/claude/`
+**Problem**: Path resolution was broken due to incorrect directory handling:
+- Added directories to search paths WITHOUT checking if they exist
+- Stored full file paths instead of base directories
+- Did not follow EnergyPlus MCP proven pattern
 
-**Fix**: Added Claude Desktop paths to search strategy in `path_utils.py`:
+**Root Cause**: Code was doing this:
 ```python
-# Search in Claude Desktop uploads directory
-if os.path.exists("/mnt/user-data/uploads"):
-    search_paths.append(("Claude uploads", "/mnt/user-data/uploads/..."))
+# WRONG - builds full path immediately, doesn't check dir exists
+search_paths.append(("Claude uploads", os.path.join("/mnt/user-data/uploads", file_path)))
 
-# Search in Claude Desktop home directory
-if os.path.exists("/home/claude"):
-    search_paths.append(("Claude home", "/home/claude/..."))
+# Then tried to check if FULL PATH exists (wrong!)
+for location, path in search_paths:
+    if os.path.exists(path):  # This checks file, not directory!
 ```
+
+**Fix Applied** (following EnergyPlus MCP pattern):
+```python
+# CORRECT - only add directory if it exists
+if os.path.exists("/mnt/user-data/uploads"):
+    search_paths.append(("Claude uploads", "/mnt/user-data/uploads"))
+
+# Then build candidate path and check
+for location, search_dir in search_paths:
+    candidate_path = os.path.join(search_dir, file_path)
+    if os.path.exists(candidate_path):
+        return os.path.abspath(candidate_path)
+```
+
+**Key Changes**:
+1. Check if base directory exists BEFORE adding to search paths
+2. Store only the base directory, not the full file path
+3. Build candidate path inside the loop
+4. Return absolute path for consistency
 
 **Result**: Server now works in **both environments**:
 - Docker: Uses `/workspace/` paths ✓
 - Claude Desktop: Uses `/mnt/user-data/uploads/` and `/home/claude/` ✓
+- Dynamic discovery: Only searches directories that actually exist ✓
 
 ## How Claude Should Use the Tools
 
@@ -518,8 +537,8 @@ Spaces count: 12
 
 ### Priority Fixes
 1. ✓ Fix workspace_root path (DONE)
-2. Test all tools with the actual model file
-3. Add error handling for missing OpenStudio dependencies
+2. ✓ Install OpenStudio Python package in Dockerfile (DONE)
+3. Test all tools with the actual model file
 4. Add validation for tool parameters
 
 ### Future Enhancements

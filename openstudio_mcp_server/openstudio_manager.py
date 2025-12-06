@@ -65,26 +65,34 @@ class OpenStudioManager:
             ValueError: If the file cannot be loaded
         """
         try:
-            # Resolve file path using intelligent path resolution
+            # Resolve file path using intelligent path resolution (NO CACHE - dynamic search)
             resolved_path = resolve_osm_path(self.config, file_path)
 
-            self.logger.info(f"Loading OSM file: {resolved_path}")
+            # Verify file exists and log file info for debugging
+            if not os.path.exists(resolved_path):
+                raise FileNotFoundError(f"OSM file not found after resolution: {resolved_path}")
+
+            file_size = os.path.getsize(resolved_path)
+            file_mtime = os.path.getmtime(resolved_path)
+            self.logger.info(f"Loading OSM file: {resolved_path} ({file_size} bytes, modified: {file_mtime})")
 
             # Import toolkit function
             from openstudio_toolkit.utils.osm_utils import load_osm_file_as_model
 
-            # Load the model
+            # Load the model - ALWAYS reads from disk (no cache)
             model = load_osm_file_as_model(
                 osm_file_path=resolved_path,
                 version_translator=translate_version
             )
 
             if model is None:
-                raise ValueError("Failed to load OSM file")
+                raise ValueError(f"Failed to load OSM file: {resolved_path}")
 
-            # Update state
+            # Update state with NEW model (replaces any previous model)
             self.current_model = model
             self.current_file_path = resolved_path
+
+            self.logger.info(f"Model loaded successfully from: {resolved_path}")
 
             # Get building info
             building_info = self._get_building_summary()

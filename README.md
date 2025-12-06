@@ -83,9 +83,10 @@ docker build -t openstudio-mcp-dev -f .devcontainer/Dockerfile .
 
 This builds a container with:
 - Python 3.12
-- OpenStudio 3.7.0
+- OpenStudio 3.7.0 (SDK and Python bindings)
 - All required dependencies
 - OpenStudio-Toolkit library
+- `openstudio` Python package (v3.7.0)
 
 #### 3. Configure Claude Desktop
 
@@ -321,6 +322,19 @@ uv run python -m openstudio_mcp_server.server
 - Ensure Docker Desktop is running
 - Verify volume mount path is correct and absolute
 - Check Docker image was built successfully
+
+### "ModuleNotFoundError: No module named 'openstudio'" Error
+This means the OpenStudio Python bindings are not installed. This should not happen with the Docker image, but if you're running locally:
+
+```bash
+# Install OpenStudio Python package
+pip install openstudio==3.7.0
+
+# Verify installation
+python -c "import openstudio; print(openstudio.openStudioVersion())"
+```
+
+**Note**: The Docker image automatically installs this package during build.
 
 ---
 

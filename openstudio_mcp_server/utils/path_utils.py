@@ -74,44 +74,48 @@ def resolve_path(
             return file_path
 
     # For relative paths or filenames, try multiple locations
+    # IMPORTANT: Search paths are checked in ORDER - user files have PRIORITY
+    # Following EnergyPlus MCP pattern: only add directories that exist
     search_paths = []
 
-    # Strategy 2: Relative to workspace root
-    workspace_path = os.path.join(config.paths.workspace_root, file_path)
-    search_paths.append(("workspace root", workspace_path))
-
-    # Strategy 3: Relative to sample_files
-    sample_path = os.path.join(config.paths.sample_files_path, file_path)
-    search_paths.append(("sample_files", sample_path))
-
-    # Strategy 4: In models subdirectory
-    models_path = os.path.join(config.paths.sample_files_path, "models", file_path)
-    search_paths.append(("sample_files/models", models_path))
-
-    # Strategy 5: Relative to output directory
-    if hasattr(config.paths, 'output_dir'):
-        output_path = os.path.join(config.paths.output_dir, file_path)
-        search_paths.append(("outputs", output_path))
-
-    # Strategy 6: Claude Desktop uploads directory
-    claude_uploads = os.path.join("/mnt/user-data/uploads", file_path)
+    # Strategy 2: Claude Desktop uploads (FIRST PRIORITY for user files)
+    # Only add if directory exists (user may not have uploaded files yet)
     if os.path.exists("/mnt/user-data/uploads"):
-        search_paths.append(("Claude uploads", claude_uploads))
+        search_paths.append(("Claude uploads", "/mnt/user-data/uploads"))
 
-    # Strategy 7: /home/claude directory (Claude Desktop working directory)
-    home_claude = os.path.join("/home/claude", file_path)
+    # Strategy 3: /home/claude directory (Claude Desktop working directory)
     if os.path.exists("/home/claude"):
-        search_paths.append(("Claude home", home_claude))
+        search_paths.append(("Claude home", "/home/claude"))
 
-    # Strategy 8: Current directory
-    current_dir_path = os.path.abspath(file_path)
-    search_paths.append(("current directory", current_dir_path))
+    # Strategy 4: Models subdirectory (common location for sample files)
+    models_dir = os.path.join(config.paths.sample_files_path, "models")
+    if os.path.exists(models_dir):
+        search_paths.append(("sample_files/models", models_dir))
 
-    # Try each search path
-    for location, path in search_paths:
-        if os.path.exists(path):
-            logger.debug(f"Found {description} in {location}: {path}")
-            return path
+    # Strategy 5: Sample files directory
+    if os.path.exists(config.paths.sample_files_path):
+        search_paths.append(("sample_files", config.paths.sample_files_path))
+
+    # Strategy 6: Relative to output directory
+    if hasattr(config.paths, 'output_dir') and os.path.exists(config.paths.output_dir):
+        search_paths.append(("outputs", config.paths.output_dir))
+
+    # Strategy 7: Relative to workspace root
+    if os.path.exists(config.paths.workspace_root):
+        search_paths.append(("workspace root", config.paths.workspace_root))
+
+    # Try each search path (following EnergyPlus MCP pattern)
+    for location, search_dir in search_paths:
+        candidate_path = os.path.join(search_dir, file_path)
+        if os.path.exists(candidate_path):
+            logger.debug(f"Found {description} in {location}: {candidate_path}")
+            return os.path.abspath(candidate_path)
+
+    # Try as-is (relative to current directory) - EnergyPlus MCP pattern
+    if os.path.exists(file_path):
+        abs_path = os.path.abspath(file_path)
+        logger.debug(f"Found {description} in current directory: {abs_path}")
+        return abs_path
 
     # If must_exist=False, create a valid output path
     if not must_exist:
