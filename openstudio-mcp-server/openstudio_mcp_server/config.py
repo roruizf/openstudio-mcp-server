@@ -71,42 +71,16 @@ class OpenStudioConfig:
 
 @dataclass
 class PathConfig:
-    """File system paths for the MCP server."""
-
-    workspace_root: str = "/workspace"
-    sample_files_path: Optional[str] = None
+    """Path configuration"""
+    workspace_root: str = "/workspace/openstudio-mcp-server"
+    sample_files_path: str = ""
     temp_dir: str = "/tmp"
-    output_dir: Optional[str] = None
-    logs_dir: Optional[str] = None
+    output_dir: str = "/workspace/openstudio-mcp-server/outputs"
 
     def __post_init__(self):
-        """Set default paths based on workspace root."""
-        # Detect workspace root if running outside Docker
-        if not os.path.exists(self.workspace_root):
-            # Try current working directory's parent (if we're in a subdirectory)
-            cwd = os.getcwd()
-            if os.path.basename(cwd) == "openstudio-mcp-server":
-                self.workspace_root = os.path.dirname(cwd)
-            else:
-                self.workspace_root = cwd
-
+        """Set default paths after initialization"""
         if not self.sample_files_path:
             self.sample_files_path = os.path.join(self.workspace_root, "sample_files")
-
-        if not self.output_dir:
-            self.output_dir = os.path.join(self.workspace_root, "outputs")
-
-        if not self.logs_dir:
-            self.logs_dir = os.path.join(self.workspace_root, "logs")
-
-        # Create directories if they don't exist (ignore permission errors)
-        for directory in [self.sample_files_path, self.output_dir, self.logs_dir]:
-            try:
-                os.makedirs(directory, exist_ok=True)
-            except (PermissionError, OSError):
-                # If we can't create directories (e.g., in Docker with read-only mount),
-                # continue anyway - they might already exist
-                pass
 
 
 @dataclass
@@ -137,9 +111,12 @@ def setup_logging(config: Config) -> None:
     """
     log_level = getattr(logging, config.server.log_level.upper(), logging.INFO)
 
+    # Create logs directory
+    logs_dir = os.path.join(config.paths.workspace_root, "logs")
+
     # Create logs directory if it doesn't exist (ignore permission errors)
     try:
-        os.makedirs(config.paths.logs_dir, exist_ok=True)
+        os.makedirs(logs_dir, exist_ok=True)
     except (PermissionError, OSError):
         # Can't create logs directory in Docker, just log to console
         pass
@@ -149,7 +126,7 @@ def setup_logging(config: Config) -> None:
 
     # Try to add file handlers if we have write permission
     try:
-        main_log_file = os.path.join(config.paths.logs_dir, "openstudio_mcp_server.log")
+        main_log_file = os.path.join(logs_dir, "openstudio_mcp_server.log")
         handlers.append(logging.FileHandler(main_log_file))
     except (PermissionError, OSError):
         # Can't write log files, console only
@@ -164,7 +141,7 @@ def setup_logging(config: Config) -> None:
 
     # Try to add error log handler if we have write permission
     try:
-        error_log_file = os.path.join(config.paths.logs_dir, "openstudio_mcp_errors.log")
+        error_log_file = os.path.join(logs_dir, "openstudio_mcp_errors.log")
         error_handler = logging.FileHandler(error_log_file)
         error_handler.setLevel(logging.ERROR)
         error_handler.setFormatter(
@@ -178,7 +155,7 @@ def setup_logging(config: Config) -> None:
     logger = logging.getLogger(__name__)
     logger.info(f"Logging initialized at {log_level} level")
     if handlers and len(handlers) > 1:
-        logger.info(f"Logging to console and files in {config.paths.logs_dir}")
+        logger.info(f"Logging to console and files in {logs_dir}")
     else:
         logger.info(f"Logging to console only")
 
@@ -219,9 +196,8 @@ def get_configuration_info(config: Config) -> dict:
         },
         "paths": {
             "workspace_root": config.paths.workspace_root,
-            "sample_files": config.paths.sample_files_path,
+            "sample_files_path": config.paths.sample_files_path,
             "output_dir": config.paths.output_dir,
-            "logs_dir": config.paths.logs_dir,
             "temp_dir": config.paths.temp_dir,
         },
     }

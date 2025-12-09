@@ -1,20 +1,20 @@
 {
   "name": "OpenStudio MCP Server Development",
   "dockerFile": "Dockerfile",
-  "context": "..",
-
-  "mounts": [
-    "source=${localWorkspaceFolder},target=/workspace/openstudio-mcp-server,type=bind,consistency=cached"
-  ],
-
-  "remoteUser": "vscode",
+  "context": ".",
   "workspaceFolder": "/workspace/openstudio-mcp-server",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "remoteUser": "vscode",
 
-  "forwardPorts": [6274, 8080, 3000],
+  "forwardPorts": [6274, 6277, 8080, 3000],
   "portsAttributes": {
     "6274": {
       "label": "MCP Inspector",
       "onAutoForward": "openBrowser"
+    },
+    "6277": {
+      "label": "MCP Inspector Proxy",
+      "onAutoForward": "silent"
     },
     "8080": {
       "label": "HTTP Server (Alternative)"

@@ -146,7 +146,7 @@ class OpenStudioManager:
             # Save the model
             save_model_as_osm_file(
                 osm_model=self.current_model,
-                file_path=save_path
+                osm_file_path=save_path
             )
 
             # Update current path

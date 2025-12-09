@@ -61,12 +61,11 @@ This project was developed with the invaluable assistance of **Claude Code** pow
 
 ### Prerequisites
 
-- **Python 3.10+**
-- **Docker Desktop** (for containerized deployment)
-- **OpenStudio 3.7.0** (installed in Docker container)
+- **Docker Desktop** (REQUIRED - recommended installation method)
 - **Claude Desktop**, **VS Code**, or **Cursor** (for AI assistant integration)
+- **Windows/Mac/Linux** system
 
-### Quick Start
+### Quick Start (Docker - Recommended)
 
 #### 1. Clone the Repository
 
@@ -78,24 +77,28 @@ cd openstudio-mcp-server
 #### 2. Build Docker Image
 
 ```bash
-docker build -t openstudio-mcp-dev -f .devcontainer/Dockerfile .
+docker build -t openstudio-mcp-dev -f .devcontainer/Dockerfile .devcontainer
 ```
 
 This builds a container with:
 - Python 3.12
-- OpenStudio 3.7.0 (SDK and Python bindings)
+- **OpenStudio 3.7.0** (system installation with SDK and Python bindings)
 - All required dependencies
 - OpenStudio-Toolkit library
-- `openstudio` Python package (v3.7.0)
+
+**Verify Build:**
+```bash
+docker images | grep openstudio-mcp-dev
+```
 
 #### 3. Configure Claude Desktop
 
 Edit your Claude Desktop configuration file:
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 
-Add this configuration:
+**Add this configuration (Windows example):**
 
 ```json
 {
@@ -106,25 +109,34 @@ Add this configuration:
         "run",
         "--rm",
         "-i",
-        "-v",
-        "/absolute/path/to/openstudio-mcp-server:/workspace",
-        "-w",
-        "/workspace",
+        "-v", "C:\\:/mnt/c",
+        "-v", "C:\\PATH\\TO\\YOUR\\openstudio-mcp-server:/workspace",
+        "-w", "/workspace/openstudio-mcp-server",
         "openstudio-mcp-dev",
-        "uv",
-        "run",
-        "python",
-        "-m",
-        "openstudio_mcp_server.server"
+        "uv", "run", "openstudio_mcp_server/server.py"
       ]
     }
   }
 }
 ```
 
-**Important**: Replace `/absolute/path/to/openstudio-mcp-server` with your actual path:
-- **macOS/Linux**: `/Users/username/openstudio-mcp-server`
-- **Windows**: `C:\openstudio-mcp-server` (use forward slashes in JSON)
+> **💡 Windows Setup Tip (Best Practice):**
+>
+> We strongly recommend cloning this repository to a **short root path** like `C:\openstudio-mcp-server` instead of deep user directories like `C:\Users\YourName\Documents\GitHub\openstudio-mcp-server`.
+>
+> **Why?** Windows has a 260-character path limit that can cause issues with nested project directories and long dependency paths. This recommendation follows EnergyPlus best practices for avoiding path-related build and runtime errors.
+>
+> **Example:**
+> - ✅ **Recommended:** `C:\openstudio-mcp-server`
+> - ⚠️ **Avoid:** `C:\Users\YourName\Documents\Projects\BuildingEnergy\openstudio-mcp-server`
+
+**CRITICAL:** The configuration requires **two volume mounts** (see explanations below):
+- **`-v C:\\:/mnt/c`** - Grants access to your C: drive for reading/writing model files
+- **`-v C:\\PATH\\TO\\YOUR\\openstudio-mcp-server:/workspace`** - Mounts the server source code
+
+**Important**: Replace `C:\\PATH\\TO\\YOUR\\openstudio-mcp-server` with your actual repository path.
+
+📖 **For detailed setup instructions, see [CLAUDE_DESKTOP_SETUP.md](CLAUDE_DESKTOP_SETUP.md)**
 
 #### 4. Restart Claude Desktop
 
@@ -138,6 +150,76 @@ In Claude Desktop, ask:
 ```
 
 Claude should list all available tools.
+
+---
+
+## File Access (CRITICAL)
+
+### Understanding Docker Volume Mounts
+
+The OpenStudio MCP Server runs inside a Docker container, which has its own isolated filesystem. To access files on your **host machine** (your computer), you must use **mounted paths**.
+
+The configuration requires **two separate volume mounts**, each serving a distinct purpose:
+
+### 1. C: Drive Access Mount: `-v C:\:/mnt/c`
+
+**Purpose:** Grants the server **Read/Write access to your entire C: drive**, enabling it to load models from and save outputs to your host machine.
+
+**This means:**
+- Files on your C: drive are accessible at `/mnt/c/...` paths
+- Outputs saved to `/mnt/c/...` persist on your host machine
+- Without this mount, the container cannot access your files
+
+### 2. Server Source Code Mount: `-v C:\PATH\TO\YOUR\openstudio-mcp-server:/workspace`
+
+**Purpose:** Mounts the server's **source code** (the cloned repository) into the container at `/workspace`, enabling the container to execute the Python server.
+
+**This means:**
+- The server can access its own code, dependencies, and sample files
+- Changes to server code on your host are reflected in the container
+- Replace the placeholder path with where you actually cloned the repository
+
+### How to Reference Files
+
+#### ❌ WRONG (Host Paths)
+```
+C:\Users\Name\Downloads\model.osm
+C:\Users\Name\Documents\output.idf
+```
+
+#### ✅ CORRECT (Container Paths)
+```
+/mnt/c/Users/Name/Downloads/model.osm
+/mnt/c/Users/Name/Documents/output.idf
+```
+
+### Common Path Mappings
+
+| Your Folder (Windows) | Container Path |
+|----------------------|----------------|
+| `C:\Users\<Name>\Downloads\` | `/mnt/c/Users/<Name>/Downloads/` |
+| `C:\Users\<Name>\Documents\` | `/mnt/c/Users/<Name>/Documents/` |
+| `C:\Users\<Name>\Desktop\` | `/mnt/c/Users/<Name>/Desktop/` |
+| `C:\Projects\` | `/mnt/c/Projects/` |
+| Project samples | `/workspace/openstudio-mcp-server/sample_files/` |
+
+### Example Usage
+
+**Load a model from Downloads:**
+```
+User: "Load /mnt/c/Users/JohnDoe/Downloads/Office-Building.osm"
+```
+
+**Convert and save to Documents:**
+```
+User: "Convert the model to IDF and save it to /mnt/c/Users/JohnDoe/Documents/Office-Building.idf"
+```
+
+**Why This Matters:**
+- ✅ Files at `/mnt/c/...` paths persist after container stops
+- ❌ Files saved to `/tmp/...` or `/workspace/...` (without `/mnt/c`) are lost
+
+📖 **For complete file access documentation, see [CLAUDE_DESKTOP_SETUP.md](CLAUDE_DESKTOP_SETUP.md#file-access-pattern)**
 
 ---
 
@@ -228,10 +310,11 @@ openstudio-mcp-server/
 
 ## Documentation
 
+- **[CLAUDE_DESKTOP_SETUP.md](CLAUDE_DESKTOP_SETUP.md)** - ⭐ Golden Docker configuration for Claude Desktop
+- **[TESTING_PROTOCOL.md](TESTING_PROTOCOL.md)** - Standard testing procedures and troubleshooting
 - **[USER_GUIDE.md](USER_GUIDE.md)** - Simple guide for end users
 - **[DEVELOPER_NOTES.md](DEVELOPER_NOTES.md)** - Technical implementation details
 - **[FILE_ACCESS_GUIDE.md](FILE_ACCESS_GUIDE.md)** - How file discovery works
-- **[CLAUDE_DESKTOP_FIX.md](CLAUDE_DESKTOP_FIX.md)** - Claude Desktop integration notes
 
 ---
 

@@ -61,9 +61,8 @@ ENV PYTHONPATH="${OPENSTUDIO_PATH}/Python:${PYTHONPATH}"
 # Install uv package manager
 RUN pip install --no-cache-dir uv
 
-# Install OpenStudio Python bindings
-# This is critical for the MCP server tools to work
-RUN pip install --no-cache-dir openstudio==${OPENSTUDIO_VERSION}
+# OpenStudio Python bindings are provided by the system installation
+# The Python bindings are available via PYTHONPATH set above
 
 # Create non-root user for development
 RUN useradd -m -s /bin/bash vscode && \

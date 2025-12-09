@@ -8,12 +8,13 @@ working with OpenStudio building energy models.
 import logging
 import json
 import sys
-from typing import Optional
+from typing import Optional, Any, Union
 
 from mcp.server.fastmcp import FastMCP
 
 from openstudio_mcp_server.config import get_config, get_configuration_info
-from openstudio_mcp_server.openstudio_manager import OpenStudioManager
+from openstudio_mcp_server.openstudio_tools import OpenStudioManager
+from openstudio_mcp_server.utils.json_utils import ensure_json_response
 
 # Initialize configuration and logger
 config = get_config()
@@ -55,15 +56,15 @@ async def load_osm_model(file_path: str, translate_version: bool = True) -> str:
     try:
         logger.info(f"Tool called: load_osm_model(file_path='{file_path}')")
         result = os_manager.load_osm_file(file_path, translate_version)
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except FileNotFoundError as e:
         logger.warning(f"File not found: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error loading OSM file: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": f"Failed to load OSM file: {str(e)}"}, indent=2)
+        return ensure_json_response({"status": "error", "error": f"Failed to load OSM file: {str(e)}"})
 
 
 @mcp.tool()
@@ -83,15 +84,15 @@ async def save_osm_model(file_path: Optional[str] = None) -> str:
     try:
         logger.info(f"Tool called: save_osm_model(file_path='{file_path}')")
         result = os_manager.save_osm_file(file_path)
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error saving OSM file: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": f"Failed to save OSM file: {str(e)}"}, indent=2)
+        return ensure_json_response({"status": "error", "error": f"Failed to save OSM file: {str(e)}"})
 
 
 @mcp.tool()
@@ -114,15 +115,15 @@ async def convert_to_idf(output_path: Optional[str] = None) -> str:
     try:
         logger.info(f"Tool called: convert_to_idf(output_path='{output_path}')")
         result = os_manager.convert_to_idf(output_path)
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error converting to IDF: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": f"Failed to convert to IDF: {str(e)}"}, indent=2)
+        return ensure_json_response({"status": "error", "error": f"Failed to convert to IDF: {str(e)}"})
 
 
 @mcp.tool()
@@ -177,13 +178,12 @@ async def copy_file(
             f"overwrite={overwrite}, file_types={file_types})"
         )
         result = os_manager.copy_file(source_path, target_path, overwrite, file_types)
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except Exception as e:
         logger.error(f"Error copying file: {e}", exc_info=True)
-        return json.dumps(
-            {"status": "error", "error": f"Failed to copy file: {str(e)}"},
-            indent=2
+        return ensure_json_response(
+            {"status": "error", "error": f"Failed to copy file: {str(e)}"}
         )
 
 
@@ -203,15 +203,15 @@ async def get_model_summary() -> str:
     try:
         logger.info("Tool called: get_model_summary()")
         result = os_manager.get_model_summary()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error getting model summary: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 @mcp.tool()
@@ -230,15 +230,15 @@ async def get_building_info() -> str:
     try:
         logger.info("Tool called: get_building_info()")
         result = os_manager.get_building_info()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error getting building info: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 # =============================================================================
@@ -262,15 +262,15 @@ async def list_spaces() -> str:
     try:
         logger.info("Tool called: list_spaces()")
         result = os_manager.get_all_spaces()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing spaces: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 @mcp.tool()
@@ -289,15 +289,15 @@ async def get_space_details(space_name: str) -> str:
     try:
         logger.info(f"Tool called: get_space_details(space_name='{space_name}')")
         result = os_manager.get_space_by_name(space_name)
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error getting space details: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 @mcp.tool()
@@ -316,15 +316,15 @@ async def list_thermal_zones() -> str:
     try:
         logger.info("Tool called: list_thermal_zones()")
         result = os_manager.get_all_thermal_zones()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing thermal zones: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 @mcp.tool()
@@ -343,15 +343,15 @@ async def get_thermal_zone_details(zone_name: str) -> str:
     try:
         logger.info(f"Tool called: get_thermal_zone_details(zone_name='{zone_name}')")
         result = os_manager.get_thermal_zone_by_name(zone_name)
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error getting thermal zone details: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 # =============================================================================
@@ -376,15 +376,15 @@ async def list_materials() -> str:
     try:
         logger.info("Tool called: list_materials()")
         result = os_manager.get_all_materials()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing materials: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 # =============================================================================
@@ -408,15 +408,15 @@ async def list_air_loops() -> str:
     try:
         logger.info("Tool called: list_air_loops()")
         result = os_manager.get_all_air_loops()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing air loops: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 # =============================================================================
@@ -440,15 +440,15 @@ async def list_people_loads() -> str:
     try:
         logger.info("Tool called: list_people_loads()")
         result = os_manager.get_all_people_loads()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing people loads: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 @mcp.tool()
@@ -467,15 +467,15 @@ async def list_lighting_loads() -> str:
     try:
         logger.info("Tool called: list_lighting_loads()")
         result = os_manager.get_all_lighting_loads()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing lighting loads: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 @mcp.tool()
@@ -494,15 +494,15 @@ async def list_electric_equipment() -> str:
     try:
         logger.info("Tool called: list_electric_equipment()")
         result = os_manager.get_all_electric_equipment()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing electric equipment: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 # =============================================================================
@@ -526,15 +526,15 @@ async def list_schedule_rulesets() -> str:
     try:
         logger.info("Tool called: list_schedule_rulesets()")
         result = os_manager.get_all_schedule_rulesets()
-        return json.dumps(result, indent=2)
+        return ensure_json_response(result)
 
     except ValueError as e:
         logger.warning(f"Validation error: {e}")
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
     except Exception as e:
         logger.error(f"Error listing schedule rulesets: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 # =============================================================================
@@ -558,11 +558,11 @@ async def get_server_info() -> str:
     try:
         logger.info("Tool called: get_server_info()")
         result = get_configuration_info(config)
-        return json.dumps({"status": "success", "configuration": result}, indent=2)
+        return ensure_json_response({"status": "success", "configuration": result})
 
     except Exception as e:
         logger.error(f"Error getting server info: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 @mcp.tool()
@@ -582,22 +582,22 @@ async def get_current_model_status() -> str:
         logger.info("Tool called: get_current_model_status()")
 
         if os_manager.current_model is None:
-            return json.dumps({
+            return ensure_json_response({
                 "status": "success",
                 "model_loaded": False,
                 "message": "No model currently loaded. Use load_osm_model to load a model."
-            }, indent=2)
+            })
 
-        return json.dumps({
+        return ensure_json_response({
             "status": "success",
             "model_loaded": True,
             "file_path": os_manager.current_file_path,
             "message": "Model is loaded and ready for operations."
-        }, indent=2)
+        })
 
     except Exception as e:
         logger.error(f"Error getting model status: {e}", exc_info=True)
-        return json.dumps({"status": "error", "error": str(e)}, indent=2)
+        return ensure_json_response({"status": "error", "error": str(e)})
 
 
 # =============================================================================

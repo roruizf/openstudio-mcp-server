@@ -81,6 +81,57 @@ See [DEVELOPER_NOTES.md](DEVELOPER_NOTES.md) for detailed instructions on:
 - Error handling patterns
 - Testing procedures
 
+**Critical Requirements for New Tools:**
+
+1. **JSON Serialization**
+   - ALL tool returns MUST use `ensure_json_response()` wrapper
+   - Import: `from openstudio_mcp_server.utils.json_utils import ensure_json_response`
+   - Never use `str()` on lists or dicts - always use proper JSON serialization
+
+   ```python
+   # CORRECT
+   return ensure_json_response(result)
+
+   # WRONG - Can cause JSON parsing errors
+   return json.dumps(result)  # Missing edge case handling
+   return str(result)          # Creates invalid JSON
+   ```
+
+2. **Parameter Matching**
+   - Verify exact parameter names when calling wrapped functions
+   - Use explicit parameters or `**kwargs` for flexibility
+   - Test with actual function signatures before committing
+
+   ```python
+   # CORRECT - Explicit matching
+   toolkit_function(
+       osm_model=model,
+       osm_file_path=path  # ← Verify this exact name
+   )
+
+   # WRONG - Assumed parameter name
+   toolkit_function(
+       osm_model=model,
+       file_path=path  # ← May not match actual signature
+   )
+   ```
+
+3. **Error Handling**
+   - Catch specific exceptions (ValueError, FileNotFoundError, etc.)
+   - Return structured error responses
+   - Use `ensure_json_response()` for both success AND error paths
+
+   ```python
+   try:
+       result = manager.do_operation()
+       return ensure_json_response(result)
+   except ValueError as e:
+       return ensure_json_response({"status": "error", "error": str(e)})
+   except Exception as e:
+       logger.error(f"Unexpected error: {e}", exc_info=True)
+       return ensure_json_response({"status": "error", "error": str(e)})
+   ```
+
 ### Documentation
 
 - Update README.md if adding new features

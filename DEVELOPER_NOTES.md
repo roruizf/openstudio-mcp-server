@@ -533,6 +533,203 @@ Load status: success
 Spaces count: 12
 ```
 
+## Critical Fixes & Architectural Decisions
+
+### JSON Serialization Fix (December 2024)
+
+**Problem: `SyntaxError: Unexpected token 'u'` in Claude Desktop**
+
+Users reported a JSON parsing error when using the server with Claude Desktop:
+```
+SyntaxError: Unexpected token 'u', "[utilities"... is not valid JSON
+```
+
+**Root Cause:**
+The error occurred when Python objects (lists or dicts) were accidentally converted to strings using Python's `str()` function instead of proper JSON serialization. This created invalid JSON with single quotes:
+```python
+# WRONG - Python representation
+str(['item1', 'item2'])  # → "['item1', 'item2']"  (single quotes - invalid JSON)
+
+# CORRECT - JSON serialization
+json.dumps(['item1', 'item2'])  # → '["item1", "item2"]'  (double quotes - valid JSON)
+```
+
+**Solution: `ensure_json_response()` Wrapper**
+
+Created a defensive wrapper function in `utils/json_utils.py`:
+
+```python
+def ensure_json_response(result: Any) -> str:
+    """Ensures all responses are properly JSON-serialized."""
+    try:
+        if isinstance(result, str):
+            try:
+                json.loads(result)  # Validate it's already JSON
+                return result
+            except json.JSONDecodeError:
+                # Wrap plain strings in a structured response
+                return json.dumps({"status": "success", "message": result}, indent=2)
+
+        # Serialize all other types (dict, list, etc.)
+        return json.dumps(result, indent=2, default=str)
+
+    except Exception as e:
+        # Safe fallback - no recursion
+        return json.dumps({"status": "error", "error": f"Serialization error: {str(e)}"}, indent=2)
+```
+
+**Key Features:**
+1. **Validates existing JSON strings** - Checks if a string is already valid JSON
+2. **Wraps plain messages** - Converts simple strings to structured responses
+3. **Handles edge cases** - Uses `default=str` to serialize non-standard objects
+4. **Safe error handling** - Returns simple error dict if serialization fails (no recursion)
+
+**Recursion Bug Fix:**
+
+Initial implementation had a critical bug where the error handler called itself recursively:
+```python
+# BUG - Infinite recursion
+except Exception as e:
+    return ensure_json_response({"error": str(e)})  # ← Calls itself again!
+```
+
+**Fixed version:**
+```python
+# FIXED - Direct serialization
+except Exception as e:
+    return json.dumps({"status": "error", "error": str(e)}, indent=2)  # ← Safe
+```
+
+**Applied to All Tools:**
+- All 19+ MCP tools now use `ensure_json_response()` for their return values
+- Both success and error paths are protected
+- Located in: `openstudio_mcp_server/utils/json_utils.py`
+- Imported in: `openstudio_mcp_server/server.py`
+
+---
+
+### Docker Volume Mapping Architecture
+
+**Challenge: File Access in Isolated Containers**
+
+The MCP server runs inside a Docker container with an isolated filesystem. To read/write files on the host machine (user's computer), we must use Docker volume mounts.
+
+**Solution: Dual Volume Mount Strategy**
+
+The Claude Desktop configuration uses **two separate volume mounts**:
+
+```json
+{
+  "mcpServers": {
+    "openstudio": {
+      "command": "docker",
+      "args": [
+        "-v", "C:\\:/mnt/c",                    // Mount 1: Host C: drive access
+        "-v", "C:\\path\\to\\repo:/workspace"  // Mount 2: Server source code
+      ]
+    }
+  }
+}
+```
+
+**Mount 1: C: Drive Access (`-v C:\:/mnt/c`)**
+
+**Purpose:** Grants the server READ/WRITE access to the user's entire C: drive.
+
+**Mapping:**
+```
+Host (Windows)                     Container (Linux)
+─────────────────                  ─────────────────
+C:\Users\Name\Downloads\    →     /mnt/c/Users/Name/Downloads/
+C:\Users\Name\Documents\    →     /mnt/c/Users/Name/Documents/
+C:\Projects\                →     /mnt/c/Projects/
+```
+
+**Why Critical:**
+- Enables `load_osm_model` to read user-uploaded files
+- Enables `save_osm_model` to write outputs that persist on host
+- Enables `convert_to_idf` to export IDF files to user directories
+- Without this mount, files saved inside the container disappear when it stops
+
+**Mount 2: Server Source Code (`-v repo:/workspace`)**
+
+**Purpose:** Mounts the cloned repository into the container at `/workspace`.
+
+**Why Needed:**
+- Container needs access to Python source code
+- Enables live code changes during development
+- Provides access to sample files and test models
+- Sets the working directory for `uv run` command
+
+**Path Resolution Strategy:**
+
+The server implements intelligent path resolution (in `utils/path_utils.py`):
+
+1. **Absolute paths starting with `/mnt/c`** - Direct host file access
+2. **Relative paths** - Searched in priority order:
+   - `/mnt/user-data/uploads` (Claude Desktop uploads)
+   - `/home/claude` (Claude working directory)
+   - `/workspace/sample_files/models` (Project samples)
+   - `/workspace/sample_files`
+   - `/workspace/outputs`
+   - `/workspace`
+
+**Example User Flow:**
+```
+User: "Load /mnt/c/Users/John/Downloads/model.osm"
+  ↓
+Server: resolve_path() recognizes absolute path
+  ↓
+Server: Reads file directly from /mnt/c/Users/John/Downloads/model.osm
+  ↓
+Success: File loaded from user's actual Downloads folder
+```
+
+**Testing the Mounts:**
+
+The only reliable way to verify volume mounts work is using MCP Inspector with Docker:
+
+```bash
+npx @modelcontextprotocol/inspector docker run --rm -i \
+  -v "C:\:/mnt/c" \
+  -v "$(pwd):/workspace" \
+  -w "/workspace/openstudio-mcp-server" \
+  openstudio-mcp-dev \
+  uv run openstudio_mcp_server/server.py
+```
+
+See `TESTING_PROTOCOL.md` → "How to Debug Docker Volumes" for comprehensive testing instructions.
+
+---
+
+### Parameter Mismatch Bug Fix (save_osm_model)
+
+**Problem:** `TypeError: save_model_as_osm_file() got unexpected keyword argument 'file_path'`
+
+**Root Cause:**
+The `openstudio_tools.py` was calling toolkit function with wrong parameter name:
+```python
+# BUG in openstudio_tools.py (line 149)
+save_model_as_osm_file(
+    osm_model=self.current_model,
+    file_path=save_path  # ← WRONG parameter name
+)
+```
+
+**Fix:**
+```python
+# FIXED
+save_model_as_osm_file(
+    osm_model=self.current_model,
+    osm_file_path=save_path  # ← Correct parameter name
+)
+```
+
+**Lesson Learned:**
+Always verify the exact parameter names of wrapped functions. Consider using `**kwargs` for flexibility or explicit parameter matching.
+
+---
+
 ## Next Steps for Development
 
 ### Priority Fixes
