@@ -53,6 +53,24 @@ def resolve_path(
     original_path = file_path
     logger.debug(f"Resolving path: {file_path} (must_exist={must_exist})")
 
+    # ---------------------------------------------------------
+    # AUTOMATIC DOCKER PATH TRANSLATION (Windows Host Support)
+    # ---------------------------------------------------------
+    # If we receive a Windows path (e.g., "C:\Users\...") and we are running in Linux (Docker),
+    # automatically translate it to the mounted volume path ("/mnt/c/Users/...").
+
+    # 1. Normalize separators (Windows \ to Linux /)
+    if "\\" in file_path:
+        file_path = file_path.replace("\\", "/")
+
+    # 2. Detect Drive Letter (C:/...) and map to /mnt/c/
+    # Note: We assume the standard Docker mount "-v C:\:/mnt/c" is active.
+    if file_path.lower().startswith("c:/"):
+        # Remove "c:/" (3 chars) and prepend "/mnt/c/"
+        original_win_path = file_path
+        file_path = f"/mnt/c/{file_path[3:]}"
+        logger.info(f"Auto-translated Windows path to Docker path: {original_win_path} -> {file_path}")
+
     # Validate file extension if specified
     if file_types:
         file_ext = os.path.splitext(file_path)[1].lower()

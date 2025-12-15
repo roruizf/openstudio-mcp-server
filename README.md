@@ -302,8 +302,7 @@ openstudio-mcp-server/
 ├── pyproject.toml                  # Python dependencies
 ├── README.md                       # This file
 ├── USER_GUIDE.md                   # User documentation
-├── DEVELOPER_NOTES.md              # Technical documentation
-└── FILE_ACCESS_GUIDE.md            # File handling details
+└── DEVELOPER_NOTES.md              # Technical documentation
 ```
 
 ---
@@ -312,9 +311,8 @@ openstudio-mcp-server/
 
 - **[CLAUDE_DESKTOP_SETUP.md](CLAUDE_DESKTOP_SETUP.md)** - ⭐ Golden Docker configuration for Claude Desktop
 - **[TESTING_PROTOCOL.md](TESTING_PROTOCOL.md)** - Standard testing procedures and troubleshooting
-- **[USER_GUIDE.md](USER_GUIDE.md)** - Simple guide for end users
+- **[USER_GUIDE.md](USER_GUIDE.md)** - Simple guide for end users (includes smart path handling)
 - **[DEVELOPER_NOTES.md](DEVELOPER_NOTES.md)** - Technical implementation details
-- **[FILE_ACCESS_GUIDE.md](FILE_ACCESS_GUIDE.md)** - How file discovery works
 
 ---
 

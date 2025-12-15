@@ -16,8 +16,11 @@ from datetime import datetime
 # Import path utilities
 from .utils.path_utils import resolve_osm_path, resolve_idf_path, resolve_output_path
 
-# NOTE: OpenStudio toolkit will be imported once it's integrated
-# For now, we'll create the interface that will use it
+# Import openstudio-toolkit functions
+from openstudio_toolkit.tasks.measures.apply_space_type_and_construction_set_wizard import (
+    run as run_apply_space_type_and_construction_set_wizard,
+    validator as validate_apply_space_type_and_construction_set_wizard
+)
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +46,8 @@ class OpenStudioManager:
         self.logger = logging.getLogger(__name__)
 
         self.logger.info("OpenStudioManager initialized")
-        self.logger.info(f"OpenStudio installation: {config.openstudio.installation_dir}")
+        self.logger.info(
+            f"OpenStudio installation: {config.openstudio.installation_dir}")
 
     # =========================================================================
     # FILE OPERATIONS
@@ -70,11 +74,13 @@ class OpenStudioManager:
 
             # Verify file exists and log file info for debugging
             if not os.path.exists(resolved_path):
-                raise FileNotFoundError(f"OSM file not found after resolution: {resolved_path}")
+                raise FileNotFoundError(
+                    f"OSM file not found after resolution: {resolved_path}")
 
             file_size = os.path.getsize(resolved_path)
             file_mtime = os.path.getmtime(resolved_path)
-            self.logger.info(f"Loading OSM file: {resolved_path} ({file_size} bytes, modified: {file_mtime})")
+            self.logger.info(
+                f"Loading OSM file: {resolved_path} ({file_size} bytes, modified: {file_mtime})")
 
             # Import toolkit function
             from openstudio_toolkit.utils.osm_utils import load_osm_file_as_model
@@ -92,12 +98,14 @@ class OpenStudioManager:
             self.current_model = model
             self.current_file_path = resolved_path
 
-            self.logger.info(f"Model loaded successfully from: {resolved_path}")
+            self.logger.info(
+                f"Model loaded successfully from: {resolved_path}")
 
             # Get building info
             building_info = self._get_building_summary()
 
-            self.logger.info(f"Successfully loaded model: {building_info.get('name', 'Unnamed')}")
+            self.logger.info(
+                f"Successfully loaded model: {building_info.get('name', 'Unnamed')}")
 
             return {
                 "status": "success",
@@ -133,10 +141,12 @@ class OpenStudioManager:
             # Determine save path
             if file_path is None:
                 if self.current_file_path is None:
-                    raise ValueError("No file path specified and no current file path")
+                    raise ValueError(
+                        "No file path specified and no current file path")
                 save_path = self.current_file_path
             else:
-                save_path = resolve_output_path(self.config, file_path, file_types=['.osm'])
+                save_path = resolve_output_path(
+                    self.config, file_path, file_types=['.osm'])
 
             self.logger.info(f"Saving OSM file: {save_path}")
 
@@ -184,12 +194,16 @@ class OpenStudioManager:
             # Determine output path
             if output_path is None:
                 if self.current_file_path is None:
-                    output_path = os.path.join(self.config.paths.output_dir, "model.idf")
+                    output_path = os.path.join(
+                        self.config.paths.output_dir, "model.idf")
                 else:
-                    base_name = os.path.splitext(os.path.basename(self.current_file_path))[0]
-                    output_path = os.path.join(self.config.paths.output_dir, f"{base_name}.idf")
+                    base_name = os.path.splitext(
+                        os.path.basename(self.current_file_path))[0]
+                    output_path = os.path.join(
+                        self.config.paths.output_dir, f"{base_name}.idf")
             else:
-                output_path = resolve_output_path(self.config, output_path, file_types=['.idf'])
+                output_path = resolve_output_path(
+                    self.config, output_path, file_types=['.idf'])
 
             self.logger.info(f"Converting OSM to IDF: {output_path}")
 
@@ -260,7 +274,8 @@ class OpenStudioManager:
 
             # Check source is readable
             if not os.access(resolved_source, os.R_OK):
-                raise PermissionError(f"Cannot read source file: {resolved_source}")
+                raise PermissionError(
+                    f"Cannot read source file: {resolved_source}")
 
             # Get source file info
             source_size = os.path.getsize(resolved_source)
@@ -291,17 +306,21 @@ class OpenStudioManager:
                 try:
                     os.makedirs(target_dir, exist_ok=True)
                 except (PermissionError, OSError) as e:
-                    raise PermissionError(f"Cannot create target directory: {target_dir}\n{e}")
+                    raise PermissionError(
+                        f"Cannot create target directory: {target_dir}\n{e}")
 
             # Perform the copy
-            self.logger.info(f"Copying file: {resolved_source} -> {resolved_target}")
-            shutil.copy2(resolved_source, resolved_target)  # Preserves metadata
+            self.logger.info(
+                f"Copying file: {resolved_source} -> {resolved_target}")
+            # Preserves metadata
+            shutil.copy2(resolved_source, resolved_target)
             end_time = datetime.now()
             duration = (end_time - start_time).total_seconds()
 
             # Verify the copy
             if not os.path.exists(resolved_target):
-                raise IOError("Copy operation completed but target file not found")
+                raise IOError(
+                    "Copy operation completed but target file not found")
 
             target_size = os.path.getsize(resolved_target)
             if source_size != target_size:
@@ -545,7 +564,8 @@ class OpenStudioManager:
                 get_all_opaque_material_objects_as_dataframe
             )
 
-            df = get_all_opaque_material_objects_as_dataframe(self.current_model)
+            df = get_all_opaque_material_objects_as_dataframe(
+                self.current_model)
             materials = df.to_dict(orient='records')
 
             return {
@@ -673,7 +693,8 @@ class OpenStudioManager:
                 get_all_electric_equipment_objects_as_dataframe
             )
 
-            df = get_all_electric_equipment_objects_as_dataframe(self.current_model)
+            df = get_all_electric_equipment_objects_as_dataframe(
+                self.current_model)
             equipment = df.to_dict(orient='records')
 
             return {
@@ -707,7 +728,8 @@ class OpenStudioManager:
                 get_all_schedule_ruleset_objects_as_dataframe
             )
 
-            df = get_all_schedule_ruleset_objects_as_dataframe(self.current_model)
+            df = get_all_schedule_ruleset_objects_as_dataframe(
+                self.current_model)
             schedules = df.to_dict(orient='records')
 
             return {
@@ -719,6 +741,117 @@ class OpenStudioManager:
         except Exception as e:
             self.logger.error(f"Error getting schedule rulesets: {e}")
             raise ValueError(f"Failed to get schedule rulesets: {str(e)}")
+
+    # =========================================================================
+    # SPACE TYPE AND CONSTRUCTION SET WIZARD
+    # =========================================================================
+
+    def apply_space_type_and_construction_set_wizard(
+        self,
+        building_type: str,
+        template: str,
+        climate_zone: str,
+        create_space_types: bool = True,
+        create_construction_set: bool = True,
+        set_building_defaults: bool = True,
+        model_path: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Apply the Space Type and Construction Set Wizard to automatically configure buildings.
+
+        This wizard applies ASHRAE 90.1 or DOE prototype building configurations
+        based on building type, template, and climate zone.
+
+        Args:
+            building_type: Type of building (e.g., "Office", "Retail", "School")
+            template: Energy code template (e.g., "90.1-2013", "90.1-2019")
+            climate_zone: ASHRAE climate zone (e.g., "3A", "5B")
+            create_space_types: Whether to create and assign space types (default: True)
+            create_construction_set: Whether to create construction set (default: True)
+            model_path: Optional path to model file (if None, uses current model)
+
+        Returns:
+            Dictionary with wizard status and results
+
+        Raises:
+            ValueError: If validation fails or wizard execution fails
+        """
+        try:
+            # Step 1: Resolve model path or use current model
+            if model_path:
+                resolved_path = resolve_osm_path(self.config, model_path)
+                # Load the model
+                from openstudio_toolkit.utils.osm_utils import load_osm_file_as_model
+                model = load_osm_file_as_model(
+                    resolved_path, translate_version=True)
+                self.logger.info(f"Loaded model from: {resolved_path}")
+            else:
+                self._check_model_loaded()
+                model = self.current_model
+                resolved_path = self.current_file_path
+                self.logger.info("Using current loaded model")
+
+            # Step 2: Prepare arguments for wizard
+            wizard_args = {
+                "building_type": building_type,
+                "template": template,
+                "climate_zone": climate_zone,
+                "create_space_types": create_space_types,
+                "create_construction_set": create_construction_set,
+                "set_building_defaults": set_building_defaults,
+            }
+
+            # Step 3: Validate arguments
+            self.logger.info(f"Validating wizard arguments: {wizard_args}")
+            is_valid = validate_apply_space_type_and_construction_set_wizard(
+                model, **wizard_args)
+
+            if not is_valid:
+                raise ValueError(
+                    f"Invalid wizard arguments. "
+                    f"Building type: {building_type}, Template: {template}, "
+                    f"Climate zone: {climate_zone}"
+                )
+
+            # Step 4: Run the wizard
+            self.logger.info("Running Space Type Wizard...")
+            updated_model = run_apply_space_type_and_construction_set_wizard(
+                model, **wizard_args)
+
+            # Step 5: Update current model
+            self.current_model = updated_model
+
+            # Step 6: Save the model to disk
+            if resolved_path:
+                save_result = self.save_osm_file(resolved_path)
+                saved_path = save_result.get("file_path", resolved_path)
+            else:
+                # If no path, save to outputs with timestamped name
+                output_filename = f"wizard_applied_{datetime.now().strftime('%Y%m%d_%H%M%S')}.osm"
+                output_path = resolve_output_path(self.config, output_filename)
+                save_result = self.save_osm_file(output_path)
+                saved_path = save_result.get("file_path", output_path)
+                self.current_file_path = saved_path
+
+            self.logger.info(
+                f"Wizard applied successfully. Model saved to: {saved_path}")
+
+            return {
+                "status": "success",
+                "message": f"Space Type and Construction Set Wizard applied successfully",
+                "building_type": building_type,
+                "template": template,
+                "climate_zone": climate_zone,
+                "space_types_created": create_space_types,
+                "construction_set_created": create_construction_set,
+                "model_saved_to": saved_path,
+            }
+
+        except Exception as e:
+            self.logger.error(
+                f"Error applying Space Type and Construction Set Wizard: {e}")
+            raise ValueError(
+                f"Failed to apply Space Type and Construction Set Wizard: {str(e)}")
 
     # =========================================================================
     # UTILITY METHODS
@@ -750,17 +883,20 @@ class OpenStudioManager:
             return file_path
 
         # Check in workspace root
-        workspace_path = os.path.join(self.config.paths.workspace_root, file_path)
+        workspace_path = os.path.join(
+            self.config.paths.workspace_root, file_path)
         if os.path.exists(workspace_path):
             return workspace_path
 
         # Check in sample files
-        sample_path = os.path.join(self.config.paths.sample_files_path, file_path)
+        sample_path = os.path.join(
+            self.config.paths.sample_files_path, file_path)
         if os.path.exists(sample_path):
             return sample_path
 
         # Check in models subdirectory
-        models_path = os.path.join(self.config.paths.sample_files_path, "models", file_path)
+        models_path = os.path.join(
+            self.config.paths.sample_files_path, "models", file_path)
         if os.path.exists(models_path):
             return models_path
 

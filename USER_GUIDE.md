@@ -77,11 +77,39 @@ Claude will use the `convert_to_idf` tool.
 4. **Results are returned** as JSON data
 5. **Claude interprets and presents** the results in natural language
 
-## File Locations
+## Working with Files
+
+### How to Open Files
+
+**Smart Path Handling: You can copy the path directly from your Windows Explorer** (e.g., `C:\Users\Name\Downloads\model.osm`) **and paste it into the chat. The server automatically detects and converts it to work inside Docker.**
+
+For example, just tell Claude:
+```
+"Load the model at C:\Users\John\Documents\MyBuilding.osm"
+```
+
+The server will automatically translate this to the Docker path and load your file.
+
+**Alternative Options:**
+- **Place files in the workspace**: Copy your `.osm` files to `C:\openstudio-mcp-server\sample_files\models\` before starting
+- **Use simple filenames**: If the file is already in the workspace, just use the filename: `"Load model.osm"`
+
+### Saving Files
+
+**Important**: When saving files, use absolute paths to ensure they're saved to the correct location on your Windows host machine.
+
+For example:
+```
+"Save the modified model to C:\Users\John\Documents\modified_building.osm"
+```
+
+This ensures your file is saved where you expect it, not inside the container.
+
+### File Locations
 
 - **Your models**: Place in `sample_files/models/`
 - **Weather files**: Place in `sample_files/weather/`
-- **Output files**: Generated in `outputs/`
+- **Output files**: Generated in `outputs/` (or specify your own path)
 - **Logs**: Server logs in `logs/`
 
 ## Example Conversations
@@ -123,8 +151,10 @@ Then confirms the IDF file location.
 - Claude should automatically load the model if you mention it
 
 ### "File not found" error
-- Check that your `.osm` file is in `sample_files/models/`
-- File names are case-sensitive
+- **Windows users**: Copy the full path from File Explorer (e.g., `C:\Users\...\model.osm`) - the server will auto-translate it
+- **Already in workspace**: If you placed the file in `sample_files/models/`, just use the filename
+- **Check the path**: Verify the file exists at the location you specified
+- File names are case-sensitive on Linux
 
 ### Claude doesn't use the tools
 - Try being more specific: "Use the OpenStudio tools to..."

@@ -72,6 +72,16 @@ RUN useradd -m -s /bin/bash vscode && \
 # Set working directory
 WORKDIR /workspace/openstudio-mcp-server
 
+# Copy project files needed for build
+# NOTE: Source code is needed for uv to build the local package
+COPY openstudio-mcp-server/pyproject.toml openstudio-mcp-server/uv.lock ./
+COPY openstudio-mcp-server/openstudio_mcp_server ./openstudio_mcp_server
+
+# Install all dependencies via uv sync
+# This includes openstudio-toolkit from GitHub (requires system git)
+# The local openstudio-mcp-server package is installed in editable mode
+RUN uv sync --frozen
+
 # Switch to non-root user
 USER vscode
 

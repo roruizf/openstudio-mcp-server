@@ -28,6 +28,7 @@ dependencies = [
     "networkx>=3.0",
     "graphviz>=0.20.0",
     "openpyxl>=3.1.0",
+    "openstudio-toolkit @ git+https://github.com/roruizf/openstudio-toolkit.git@main",
 ]
 
 [project.optional-dependencies]
@@ -54,7 +55,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["openstudio_mcp_server", "openstudio_toolkit"]
+packages = ["openstudio_mcp_server"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

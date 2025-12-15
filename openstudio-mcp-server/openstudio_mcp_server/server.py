@@ -113,7 +113,8 @@ async def convert_to_idf(output_path: Optional[str] = None) -> str:
         convert_to_idf("output/model.idf")
     """
     try:
-        logger.info(f"Tool called: convert_to_idf(output_path='{output_path}')")
+        logger.info(
+            f"Tool called: convert_to_idf(output_path='{output_path}')")
         result = os_manager.convert_to_idf(output_path)
         return ensure_json_response(result)
 
@@ -177,7 +178,8 @@ async def copy_file(
             f"Tool called: copy_file(source='{source_path}', target='{target_path}', "
             f"overwrite={overwrite}, file_types={file_types})"
         )
-        result = os_manager.copy_file(source_path, target_path, overwrite, file_types)
+        result = os_manager.copy_file(
+            source_path, target_path, overwrite, file_types)
         return ensure_json_response(result)
 
     except Exception as e:
@@ -287,7 +289,8 @@ async def get_space_details(space_name: str) -> str:
         get_space_details("Office 101")
     """
     try:
-        logger.info(f"Tool called: get_space_details(space_name='{space_name}')")
+        logger.info(
+            f"Tool called: get_space_details(space_name='{space_name}')")
         result = os_manager.get_space_by_name(space_name)
         return ensure_json_response(result)
 
@@ -341,7 +344,8 @@ async def get_thermal_zone_details(zone_name: str) -> str:
         get_thermal_zone_details("Zone 1")
     """
     try:
-        logger.info(f"Tool called: get_thermal_zone_details(zone_name='{zone_name}')")
+        logger.info(
+            f"Tool called: get_thermal_zone_details(zone_name='{zone_name}')")
         result = os_manager.get_thermal_zone_by_name(zone_name)
         return ensure_json_response(result)
 
@@ -600,6 +604,93 @@ async def get_current_model_status() -> str:
         return ensure_json_response({"status": "error", "error": str(e)})
 
 
+@mcp.tool()
+async def apply_space_type_and_construction_set_wizard(
+    building_type: str,
+    template: str,
+    climate_zone: str,
+    create_space_types: bool = True,
+    create_construction_set: bool = True,
+    set_building_defaults: bool = True,
+    model_path: str = None
+) -> str:
+    """Apply the Space Type and Construction Set Wizard to automatically configure buildings.
+
+    This powerful wizard automatically applies ASHRAE 90.1 or DOE prototype building
+    configurations based on building type, energy code template, and climate zone.
+    It creates appropriate space types, assigns them to spaces, and configures
+    construction sets according to the selected energy code.
+
+    Args:
+        building_type: Type of building. Valid options:
+            - Schools: "SecondarySchool", "PrimarySchool"
+            - Office: "SmallOffice", "MediumOffice", "LargeOffice"
+            - Lodging: "SmallHotel", "LargeHotel"
+            - Warehouse: "Warehouse"
+            - Retail: "RetailStandalone", "RetailStripmall"
+            - Food Service: "QuickServiceRestaurant", "FullServiceRestaurant"
+            - Residential: "MidriseApartment", "HighriseApartment"
+            - Healthcare: "Hospital", "Outpatient"
+            - Other: "SuperMarket", "Laboratory", "Courthouse", "College"
+            - Data Centers: "LargeDataCenterLowITE", "LargeDataCenterHighITE",
+              "SmallDataCenterLowITE", "SmallDataCenterHighITE"
+
+        template: Energy code template. Valid options:
+            - DOE Reference: "DOE Ref Pre-1980", "DOE Ref 1980-2004"
+            - ASHRAE 90.1: "90.1-2004", "90.1-2007", "90.1-2010", "90.1-2013",
+              "90.1-2016", "90.1-2019"
+            - ComStock: "ComStock DOE Ref Pre-1980", "ComStock DOE Ref 1980-2004",
+              "ComStock 90.1-2004", "ComStock 90.1-2007", "ComStock 90.1-2010",
+              "ComStock 90.1-2013", "ComStock 90.1-2016", "ComStock 90.1-2019"
+
+        climate_zone: ASHRAE 169-2013 climate zone. Valid options:
+            - Zone 1: "ASHRAE 169-2013-1A", "ASHRAE 169-2013-1B"
+            - Zone 2: "ASHRAE 169-2013-2A", "ASHRAE 169-2013-2B"
+            - Zone 3: "ASHRAE 169-2013-3A", "ASHRAE 169-2013-3B", "ASHRAE 169-2013-3C"
+            - Zone 4: "ASHRAE 169-2013-4A", "ASHRAE 169-2013-4B", "ASHRAE 169-2013-4C"
+            - Zone 5: "ASHRAE 169-2013-5A", "ASHRAE 169-2013-5B", "ASHRAE 169-2013-5C"
+            - Zone 6: "ASHRAE 169-2013-6A", "ASHRAE 169-2013-6B"
+            - Zone 7: "ASHRAE 169-2013-7A"
+            - Zone 8: "ASHRAE 169-2013-8A"
+
+        create_space_types: Whether to create and assign space types (default: True)
+        create_construction_set: Whether to create construction set (default: True)
+        set_building_defaults: Whether to set building defaults using new objects. (default: False)
+        model_path: Optional path to model file. If not provided, uses currently loaded model.
+
+    Returns:
+        JSON string with wizard status and results including saved file path
+
+    Examples:
+        # Apply wizard to current model with small office configuration
+        apply_space_type_and_construction_set_wizard("SmallOffice", "90.1-2013", "ASHRAE 169-2013-3A")
+
+        # Apply wizard to a specific model file
+        apply_space_type_and_construction_set_wizard("RetailStandalone", "90.1-2019", "ASHRAE 169-2013-5B", model_path="mybuilding.osm")
+
+        # Apply wizard for school, creating only space types
+        apply_space_type_and_construction_set_wizard("PrimarySchool", "90.1-2016", "ASHRAE 169-2013-4A", create_construction_set=False)
+    """
+    try:
+        logger.info(f"Tool called: apply_space_type_and_construction_set_wizard(building_type={building_type}, "
+                    f"template={template}, climate_zone={climate_zone})")
+
+        result = os_manager.apply_space_type_and_construction_set_wizard(
+            building_type=building_type,
+            template=template,
+            climate_zone=climate_zone,
+            create_space_types=create_space_types,
+            create_construction_set=create_construction_set,
+            set_building_defaults=set_building_defaults,
+            model_path=model_path
+        )
+        return ensure_json_response(result)
+
+    except Exception as e:
+        logger.error(f"Error applying Space Type Wizard: {e}", exc_info=True)
+        return ensure_json_response({"status": "error", "error": str(e)})
+
+
 # =============================================================================
 # MAIN SERVER ENTRY POINT
 # =============================================================================
@@ -610,7 +701,8 @@ def main():
     try:
         logger.info("OpenStudio MCP Server starting...")
         logger.info(f"Server: {config.server.name} v{config.server.version}")
-        logger.info(f"OpenStudio installation: {config.openstudio.installation_dir}")
+        logger.info(
+            f"OpenStudio installation: {config.openstudio.installation_dir}")
         logger.info(f"Workspace: {config.paths.workspace_root}")
 
         # Run the server with stdio transport
