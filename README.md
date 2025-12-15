@@ -14,7 +14,7 @@ This project was developed with the invaluable assistance of **Claude Code** pow
 
 ## Features
 
-### Available Tools (19+)
+### Available Tools (20+)
 
 #### 📁 **File & Model Management**
 - `load_osm_model` - Load OpenStudio Model files with intelligent path resolution
@@ -23,6 +23,10 @@ This project was developed with the invaluable assistance of **Claude Code** pow
 - `copy_file` - Copy files with fuzzy matching and smart discovery
 - `get_model_summary` - Get comprehensive model statistics
 - `get_building_info` - Get building object details
+
+#### 📊 **Visualization & Analysis**
+- `apply_view_model` - Generate interactive HTML visualization (geometry, HVAC, zones, materials)
+- `apply_space_type_and_construction_set_wizard` - Apply ASHRAE 90.1 building templates
 
 #### 🏗️ **Building Geometry**
 - `list_spaces` - List all spaces with properties
@@ -135,6 +139,10 @@ Edit your Claude Desktop configuration file:
 - **`-v C:\\PATH\\TO\\YOUR\\openstudio-mcp-server:/workspace`** - Mounts the server source code
 
 **Important**: Replace `C:\\PATH\\TO\\YOUR\\openstudio-mcp-server` with your actual repository path.
+
+> **📁 Outputs Directory:**
+>
+> Generated files (HTML visualizations, IDF exports, reports) are automatically saved to `openstudio-mcp-server/outputs/` inside the container, which maps to `C:\openstudio-mcp-server\outputs\` on your host machine through the workspace volume mount. The server creates this directory automatically with proper permissions.
 
 📖 **For detailed setup instructions, see [CLAUDE_DESKTOP_SETUP.md](CLAUDE_DESKTOP_SETUP.md)**
 
