@@ -691,6 +691,42 @@ async def apply_space_type_and_construction_set_wizard(
         return ensure_json_response({"status": "error", "error": str(e)})
 
 
+@mcp.tool()
+async def apply_view_model(
+    output_filename: str = "model_report.html"
+) -> str:
+    """Apply the View Model measure to generate an interactive HTML visualization.
+
+    This measure generates a comprehensive HTML report with:
+    - 3D geometry visualization
+    - Building component breakdown (spaces, zones, surfaces)
+    - Space types and thermal zones with color coding
+    - HVAC system diagrams
+    - Material and construction details
+    - Detailed statistics and summaries
+
+    The HTML report is interactive and can be opened in any web browser.
+
+    Args:
+        output_filename: Name of the output HTML file (default: "model_report.html").
+                        The file will be saved in the outputs/ directory.
+
+    Returns:
+        JSON response with status and file path
+
+    Example:
+        apply_view_model("my_building_report.html")
+    """
+    try:
+        logger.info(f"Applying View Model measure: {output_filename}")
+        result = os_manager.apply_view_model(output_filename=output_filename)
+        return ensure_json_response(result)
+
+    except Exception as e:
+        logger.error(f"Error applying View Model measure: {e}", exc_info=True)
+        return ensure_json_response({"status": "error", "error": str(e)})
+
+
 # =============================================================================
 # MAIN SERVER ENTRY POINT
 # =============================================================================

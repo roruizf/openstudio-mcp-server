@@ -21,6 +21,10 @@ from openstudio_toolkit.tasks.measures.apply_space_type_and_construction_set_wiz
     run as run_apply_space_type_and_construction_set_wizard,
     validator as validate_apply_space_type_and_construction_set_wizard
 )
+from openstudio_toolkit.tasks.measures.create_view_model_html import (
+    run as run_view_model,
+    validator as validate_view_model
+)
 
 logger = logging.getLogger(__name__)
 
@@ -852,6 +856,70 @@ class OpenStudioManager:
                 f"Error applying Space Type and Construction Set Wizard: {e}")
             raise ValueError(
                 f"Failed to apply Space Type and Construction Set Wizard: {str(e)}")
+
+    # =========================================================================
+    # VIEW MODEL
+    # =========================================================================
+
+    def apply_view_model(
+        self,
+        output_filename: str = "model_report.html"
+    ) -> Dict[str, Any]:
+        """
+        Apply the View Model measure to generate an interactive HTML visualization.
+
+        This measure generates a comprehensive HTML report showing:
+        - 3D geometry visualization
+        - Building component breakdown
+        - Space types and thermal zones
+        - HVAC system diagrams
+        - Material and construction details
+
+        Args:
+            output_filename: Name of the output HTML file (default: "model_report.html")
+
+        Returns:
+            Dictionary with visualization status and file path
+
+        Raises:
+            ValueError: If no model is loaded or visualization fails
+        """
+        try:
+            # Step 1: Check model is loaded
+            self._check_model_loaded()
+            self.logger.info("Applying View Model measure...")
+
+            # Step 2: Resolve output path using standard utility
+            output_path = resolve_output_path(
+                self.config,
+                output_filename,
+                file_types=['.html']
+            )
+
+            self.logger.info(f"Generating visualization to: {output_path}")
+
+            # Step 3: Run the view model generator
+            result_path = run_view_model(
+                self.current_model,
+                output_path=output_path
+            )
+
+            # Step 5: Verify file was created
+            if not os.path.exists(result_path):
+                raise ValueError(f"Visualization file was not created at: {result_path}")
+
+            self.logger.info(f"View Model measure applied successfully: {result_path}")
+
+            return {
+                "status": "success",
+                "message": f"View Model HTML report saved to: outputs/{output_filename}",
+                "file_path": result_path,
+                "file_size_bytes": os.path.getsize(result_path),
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error applying View Model measure: {e}")
+            raise ValueError(f"Failed to apply View Model measure: {str(e)}")
 
     # =========================================================================
     # UTILITY METHODS

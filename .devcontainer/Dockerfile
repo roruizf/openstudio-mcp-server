@@ -82,6 +82,9 @@ COPY openstudio-mcp-server/openstudio_mcp_server ./openstudio_mcp_server
 # The local openstudio-mcp-server package is installed in editable mode
 RUN uv sync --frozen
 
+# Create outputs mount point with open permissions
+RUN mkdir -p /workspace/openstudio-mcp-server/outputs && chmod 777 /workspace/openstudio-mcp-server/outputs
+
 # Switch to non-root user
 USER vscode
 
